@@ -1,5 +1,5 @@
-- `[ ]` Update theme colors in style.css and demo-style.css (replace Red/Blue with Gold/Slate)
-- `[ ]` Reorder index.html structure (move Floor Plans after Overview, reorder sections)
-- `[ ]` Recompile utility pages and blogs to match the new styles and header/footer
-- `[ ]` Verify responsiveness, link flows, and layout alignment
-- `[ ]` Commit and push changes to GitHub repository
+- `[x]` Update theme colors in style.css and demo-style.css (replace Red/Blue with Gold/Slate)
+- `[x]` Reorder index.html structure (move Floor Plans after Overview, reorder sections)
+- `[x]` Recompile utility pages and blogs to match the new styles and header/footer
+- `[x]` Verify responsiveness, link flows, and layout alignment
+- `[x]` Commit and push changes to GitHub repository
