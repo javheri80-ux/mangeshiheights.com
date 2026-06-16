@@ -1,4 +1,4 @@
-# mangeshiheights.in SEO & Performance Configuration
+# mangeshiheights.com SEO & Performance Configuration
 
 # 1. Force HTTPS and Non-WWW (Canonical Redirects)
 <IfModule mod_rewrite.c>

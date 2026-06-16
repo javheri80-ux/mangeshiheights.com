@@ -1,7 +1,7 @@
-# robots.txt for https://mangeshiheights.in/
+# robots.txt for https://mangeshiheights.com/
 
 User-agent: *
 Allow: /
 
 # Sitemap Location
-Sitemap: https://mangeshiheights.in/sitemap.xml
+Sitemap: https://mangeshiheights.com/sitemap.xml
