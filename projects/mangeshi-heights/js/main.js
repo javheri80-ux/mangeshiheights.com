@@ -688,10 +688,16 @@ $('.md-trigger').on('click', function (e) {
   e.preventDefault();
 });
 $('#md-close').on('click', function (e) {
-  $('#modal-1').toggleClass("md-show"); //you can list several class names
+  $('#modal-1').removeClass("md-show");
   e.preventDefault();
-  $('.md-overlay').toggleClass("show"); //you can list several class names
+  $('.md-overlay').removeClass("show");
   e.preventDefault();
+});
+$('.md-overlay').on('click', function (e) {
+  if (e.target === this) {
+    $('#modal-1').removeClass("md-show");
+    $('.md-overlay').removeClass("show");
+  }
 });
 
 $('.mobile-nav ul li a#md-trigger').on('click', function (e) {
