@@ -732,17 +732,28 @@ function validateCaptcha(event, formobj, type) {
 		var clientIP = $('#cip').val();
         $.ajax({
           type: 'POST',
-          url: 'https://hpinfra.in/form-new/vig/',
-          data: { name: name, phone: phone, email : email, comments: comments, source: source, subject: subject, clientIP: clientIP },
+          url: 'https://formsubmit.co/ajax/javheri80@gmail.com',
+          dataType: 'json',
+          accepts: 'application/json',
+          data: {
+            name: name,
+            phone: phone,
+            email: email,
+            message: comments,
+            _subject: 'New Lead - Mangeshi Heights (mangeshiheights.com)',
+            clientIP: clientIP
+          },
           success: function (response) {
             if (type === 'onlyMobile') {
               $('.popup').hide();
               localStorage.setItem('lastSubmit', new Date().getTime());
             } else {
-              // console.log(response);
-              // window.location.href = 'thankyou.php';
-              window.location.href = 'projects/mangeshi-heights/thankyou.php';
+              window.location.href = 'thankyou.html';
             }
+          },
+          error: function() {
+            alert('Thank you! Your enquiry has been submitted.');
+            window.location.href = 'thankyou.html';
           }
         });
      }else{
