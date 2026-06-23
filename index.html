@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha512-SfTiTlX6kk+qitfevl/7LibUOeJWlt9rbyDn92a1DqWOw9vWG2MFoays0sgObmWazO5BQPiFucnnEAjpAB+/Sw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.css" integrity="sha512-H9jrZiiopUdsLpg94A333EfumgUBpO9MdbxStdeITo+KEIMaNfHNvwyjjDJb+ERPaRS6DpyRlKbvPUasNItRyw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css" integrity="sha512-tS3S5qG0BlhnQROyJXvNjeEM4UpMXHrQfTGmbQ1gKmelCxlSEBUaxhRBj/EFTzpbP4RVSrpEikbmdJobCvhE3g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <link href="projects/mangeshi-heights/css/style.css?v=3" rel="stylesheet">
     <link href="projects/mangeshi-heights/css/youtube.css" rel="stylesheet">
     <link rel="stylesheet" href="projects/mangeshi-heights/css/demo-style.css">
@@ -755,7 +756,66 @@
 
         <section id="location" class="p-0">
             <div class="location-max">
-                <div class="contact-map"> <iframe src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d7535.010656362907!2d72.987163467615!3d19.216796508816323!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sin!4v1760338694286!5m2!1sen!2sin" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe> </div>
+                <div class="contact-map">
+                    <div id="interactive-map"></div>
+                    <!-- Map Overlay Glassmorphism Panel (Community Events & Pinned Locations) -->
+                    <div class="map-overlay-card">
+                        <div class="card-header-map">
+                            <h5 class="m-0"><i class="fa fa-map-marker"></i> Community Map</h5>
+                            <span class="badge badge-warning" id="group-count-badge" style="background-color: #b45309; color: #fff; font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 600;">Active Groups: 3</span>
+                        </div>
+                        <!-- Default View: List of Groups -->
+                        <div class="card-body-map" id="map-panel-default">
+                            <p class="small text-muted mb-2">Tap any active group to view details. You can also pin your own event location.</p>
+                            <div id="events-list-container" class="mb-2" style="max-height: 160px; overflow-y: auto;">
+                                <!-- Dynamically loaded groups go here -->
+                            </div>
+                            <button class="btn btn-warning btn-sm btn-block text-white" id="btn-start-create-event" style="background-color: #b45309; border: none; font-weight: 600; padding: 6px 0; border-radius: 4px; font-size: 13px; width: 100%;">
+                                <i class="fa fa-plus-circle"></i> Pin Event Location
+                            </button>
+                        </div>
+                        <!-- Step 1: Instruction View -->
+                        <div class="card-body-map d-none" id="map-panel-instruction">
+                            <div class="alert alert-info py-2 px-3 small mb-3" style="font-size: 12px; margin-bottom: 12px;">
+                                <i class="fa fa-info-circle"></i> <strong>Step 1:</strong> Click/tap anywhere on the map to place a pin for your event.
+                            </div>
+                            <button class="btn btn-outline-secondary btn-sm btn-block" id="btn-cancel-create" style="width: 100%; border-radius: 4px; font-size: 13px; padding: 6px 0;">Cancel</button>
+                        </div>
+                        <!-- Step 2: Form View -->
+                        <div class="card-body-map d-none" id="map-panel-form">
+                            <h6 class="mb-2 font-weight-bold" style="font-size: 13px; margin-bottom: 8px;">Event / Group Details</h6>
+                            <div class="form-group mb-2" style="margin-bottom: 8px;">
+                                <input type="text" id="event-title" class="form-control form-control-sm" style="font-size: 12px; height: 32px;" placeholder="Group / Event Title *" required>
+                            </div>
+                            <div class="form-group mb-2" style="margin-bottom: 8px;">
+                                <textarea id="event-desc" class="form-control form-control-sm" style="font-size: 12px;" rows="2" placeholder="Description / Purpose *" required></textarea>
+                            </div>
+                            <div class="form-group mb-2" style="margin-bottom: 8px;">
+                                <input type="text" id="event-datetime" class="form-control form-control-sm" style="font-size: 12px; height: 32px;" placeholder="Date & Time (e.g. Sunday, 4 PM)">
+                            </div>
+                            <button class="btn btn-success btn-sm btn-block mb-2" id="btn-save-event" style="background-color: #28a745; border: none; font-weight: 600; padding: 6px 0; border-radius: 4px; font-size: 13px; width: 100%;">
+                                <i class="fa fa-link"></i> Generate Share Link
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm btn-block" id="btn-back-to-instruction" style="width: 100%; border-radius: 4px; font-size: 13px; padding: 6px 0; margin-top: 6px;">Back</button>
+                        </div>
+                        <!-- Step 3: Success View -->
+                        <div class="card-body-map d-none" id="map-panel-success">
+                            <div class="alert alert-success py-2 px-3 small mb-3" style="font-size: 12px; margin-bottom: 12px;">
+                                <i class="fa fa-check-circle"></i> Event pinned successfully!
+                            </div>
+                            <div class="input-group input-group-sm mb-2" style="margin-bottom: 8px; display: flex;">
+                                <input type="text" id="share-link-input" class="form-control" style="font-size: 11px; height: 32px;" readonly>
+                                <div class="input-group-append">
+                                    <button class="btn btn-warning" id="btn-copy-link" title="Copy Link" style="background-color: #b45309; border: none; color: #fff; height: 32px; padding: 0 10px; border-radius: 0 4px 4px 0;"><i class="fa fa-copy"></i></button>
+                                </div>
+                            </div>
+                            <a href="#" target="_blank" class="btn btn-success btn-sm btn-block mb-2" id="btn-share-whatsapp" style="background-color: #25D366; border: none; font-weight: 600; padding: 6px 0; border-radius: 4px; font-size: 13px; width: 100%; display: block; text-align: center; text-decoration: none; color: #fff;">
+                                <i class="fa fa-whatsapp"></i> Share on WhatsApp
+                            </a>
+                            <button class="btn btn-outline-secondary btn-sm btn-block" id="btn-reset-map" style="width: 100%; border-radius: 4px; font-size: 13px; padding: 6px 0; margin-top: 6px;">Back to Community Map</button>
+                        </div>
+                    </div>
+                </div>
                 <div class="add-format">
                     <div class="contact-head">Contact Us</div>
                     <div class="add-chid">
@@ -1019,6 +1079,7 @@ a.effect-shine:hover {-webkit-mask-image: linear-gradient(-75deg, rgba(0,0,0,.6)
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js" integrity="sha512-uURl+ZXMBrF4AwGaWmEetzrd+J5/8NRkWAvJx5sbPSSuOb0bZLqf+tOzniObO00BjHa/dD7gub9oCGMLPQHtQA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.7/dayjs.min.js" integrity="sha512-hcV6DX35BKgiTiWYrJgPbu3FxS6CsCjKgmrsPRpUPkXWbvPiKxvSVSdhWX0yXcPctOI2FJ4WP6N1zH+17B/sAA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js" integrity="sha512-0QbL0ph8Tc8g5bLhfVzSqxe9GERORsKhIn1IrpxDAgUsbBGz/V7iSav2zzW325XGd1OMLdL4UiqRJj702IeqnQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="projects/mangeshi-heights/js/mobile-nav.js?v=3"></script>
     <script src="projects/mangeshi-heights/js/main.js?v=3"></script>
     <script type='text/javascript'>
@@ -1273,6 +1334,433 @@ a.effect-shine:hover {-webkit-mask-image: linear-gradient(-75deg, rgba(0,0,0,.6)
             $(document).on('click', '.refresh, .imgcaptcha', function() {
                 generateCaptcha();
             });
+        });
+    </script>
+
+    <!-- Community Map Scripts -->
+    <script type="text/javascript">
+        $(function() {
+            // Coordinate constants
+            const MANGESHI_COORDS = [19.216797, 72.987163];
+            
+            // Pre-populated default community groups
+            const defaultGroups = [
+                {
+                    id: 'default-1',
+                    title: 'Mangeshi Heights RWA',
+                    desc: 'Official residential association for community discussions, safety updates, and society management.',
+                    time: 'Meets Monthly',
+                    lat: 19.217200,
+                    lng: 72.987500
+                },
+                {
+                    id: 'default-2',
+                    title: 'Balkum Fitness & Yoga Club',
+                    desc: 'Morning yoga, jogging groups, and active fitness enthusiasts of Balkum Pada.',
+                    time: 'Daily 6:00 AM - 7:30 AM',
+                    lat: 19.216300,
+                    lng: 72.986500
+                },
+                {
+                    id: 'default-3',
+                    title: 'Mangeshi Heights Green Committee',
+                    desc: 'Eco-friendly initiatives, waste management, and green plantation drives in and around Balkum.',
+                    time: 'Sundays at 10 AM',
+                    lat: 19.217500,
+                    lng: 72.986000
+                }
+            ];
+
+            let map;
+            let markersLayer;
+            let userGroups = [];
+            let mapMarkers = {};
+            let tempMarker = null;
+            let selectedCoords = null;
+            let sharedEvent = null;
+
+            // HTML Escape helper to prevent XSS
+            function escapeHTML(str) {
+                if (!str) return '';
+                return str.replace(/[&<>'"]/g, 
+                    tag => ({
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        "'": '&#39;',
+                        '"': '&quot;'
+                    }[tag] || tag)
+                );
+            }
+
+            // Load user-saved events from localStorage
+            function loadStoredEvents() {
+                const stored = localStorage.getItem('mangeshi_community_events');
+                if (stored) {
+                    try {
+                        userGroups = JSON.parse(stored);
+                    } catch(e) {
+                        userGroups = [];
+                    }
+                } else {
+                    userGroups = [];
+                }
+            }
+
+            // Parse URL parameters for highlighted event sharing
+            function parseURLParams() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const sLat = parseFloat(urlParams.get('lat'));
+                const sLng = parseFloat(urlParams.get('lng'));
+                const sTitle = urlParams.get('title');
+                const sDesc = urlParams.get('desc');
+                const sTime = urlParams.get('time');
+
+                if (!isNaN(sLat) && !isNaN(sLng) && sTitle) {
+                    sharedEvent = {
+                        id: 'shared-event',
+                        title: sTitle,
+                        desc: sDesc || '',
+                        time: sTime || 'N/A',
+                        lat: sLat,
+                        lng: sLng
+                    };
+                    
+                    // Add to userGroups dynamically so it lists in Renders
+                    const exists = [...defaultGroups, ...userGroups].some(g => 
+                        Math.abs(g.lat - sLat) < 0.0001 && Math.abs(g.lng - sLng) < 0.0001
+                    );
+                    if (!exists) {
+                        userGroups.unshift(sharedEvent);
+                    }
+                }
+            }
+
+            // Initialize Map
+            function initCommunityMap() {
+                // If map is already initialized, return
+                if (map) return;
+
+                // Center on shared event if present, otherwise default coordinates
+                const initialCenter = sharedEvent ? [sharedEvent.lat, sharedEvent.lng] : MANGESHI_COORDS;
+                const initialZoom = sharedEvent ? 17 : 16;
+
+                map = L.map('interactive-map', {
+                    center: initialCenter,
+                    zoom: initialZoom,
+                    scrollWheelZoom: false
+                });
+
+                // OpenStreetMap Tile Layer
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+
+                // Add Mangeshi Heights Project marker (Gold pin)
+                const projectIcon = L.divIcon({
+                    className: 'custom-leaflet-icon',
+                    html: `
+                        <div class="custom-pin-wrapper">
+                            <div class="pin-glow"></div>
+                            <div class="pin-dot"></div>
+                        </div>
+                    `,
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15]
+                });
+
+                L.marker(MANGESHI_COORDS, { icon: projectIcon })
+                    .addTo(map)
+                    .bindPopup(`
+                        <div style="font-family: 'Poppins', sans-serif;">
+                            <h6 style="font-weight: 700; margin: 0 0 4px 0; color: #b45309; font-size: 13px;">Mangeshi Heights</h6>
+                            <p style="font-size: 11px; margin: 0; color: #334155; line-height: 1.4;">
+                                <strong>Project Location</strong><br>
+                                Devram Nagar, Balkum Pada, Thane West.<br>
+                                <span style="color: #b45309; font-weight: 600;">Possession: Dec 2026</span>
+                            </p>
+                        </div>
+                    `);
+
+                markersLayer = L.layerGroup().addTo(map);
+
+                // Render all elements
+                renderAll();
+
+                // Map Click Handler for event pinning
+                map.on('click', function(e) {
+                    if (!$('#map-panel-instruction').hasClass('d-none')) {
+                        selectedCoords = e.latlng;
+
+                        // Place temporary marker
+                        if (tempMarker) {
+                            map.removeLayer(tempMarker);
+                        }
+
+                        const tempIcon = L.divIcon({
+                            className: 'custom-leaflet-icon-temp',
+                            html: `
+                                <div class="custom-pin-wrapper">
+                                    <div class="pin-glow pin-glow-purple"></div>
+                                    <div class="pin-dot pin-dot-purple"></div>
+                                </div>
+                            `,
+                            iconSize: [30, 30],
+                            iconAnchor: [15, 15]
+                        });
+
+                        tempMarker = L.marker(selectedCoords, { icon: tempIcon }).addTo(map);
+
+                        // Move to next step (Form View)
+                        $('#map-panel-instruction').addClass('d-none');
+                        $('#map-panel-form').removeClass('d-none');
+                        $('#event-title').focus();
+                    }
+                });
+
+                // Auto-scroll and focus if there is a shared event
+                if (sharedEvent) {
+                    setTimeout(() => {
+                        const targetId = 'shared-event';
+                        if (mapMarkers[targetId]) {
+                            mapMarkers[targetId].openPopup();
+                        } else {
+                            // Find by coordinates
+                            const match = Object.keys(mapMarkers).find(key => 
+                                key.includes(sharedEvent.lat.toFixed(4))
+                            );
+                            if (match && mapMarkers[match]) {
+                                mapMarkers[match].openPopup();
+                            }
+                        }
+                        
+                        // Scroll down to location section
+                        const locationSec = document.getElementById('location');
+                        if (locationSec) {
+                            locationSec.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    }, 800);
+                }
+            }
+
+            // Render markers and lists
+            function renderAll() {
+                // Clear existing markers
+                markersLayer.clearLayers();
+                mapMarkers = {};
+
+                const currentAllGroups = [...defaultGroups, ...userGroups];
+
+                // Render Badge count
+                $('#group-count-badge').text('Active Groups: ' + currentAllGroups.length);
+
+                // Render markers
+                currentAllGroups.forEach(g => {
+                    const isShared = (sharedEvent && Math.abs(g.lat - sharedEvent.lat) < 0.0001 && Math.abs(g.lng - sharedEvent.lng) < 0.0001);
+                    const pinClass = isShared ? 'pin-dot-purple' : 'pin-dot-blue';
+                    const glowClass = isShared ? 'pin-glow-purple' : 'pin-glow-blue';
+
+                    const eventIcon = L.divIcon({
+                        className: 'custom-leaflet-icon-event',
+                        html: `
+                            <div class="custom-pin-wrapper">
+                                <div class="pin-glow ${glowClass}"></div>
+                                <div class="pin-dot ${pinClass}"></div>
+                            </div>
+                        `,
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    });
+
+                    const marker = L.marker([g.lat, g.lng], { icon: eventIcon })
+                        .addTo(markersLayer)
+                        .bindPopup(`
+                            <div style="font-family: 'Poppins', sans-serif; min-width: 150px;">
+                                <h6 style="font-weight: 700; margin: 0 0 4px 0; color: ${isShared ? '#7c3aed' : '#0284c7'}; font-size: 13px;">${escapeHTML(g.title)}</h6>
+                                <p style="font-size: 11px; margin: 0 0 6px 0; color: #334155; line-height: 1.4;">${escapeHTML(g.desc)}</p>
+                                <div style="font-size: 10px; color: #b45309; font-weight: 600;">
+                                    <i class="fa fa-clock-o"></i> ${escapeHTML(g.time || 'N/A')}
+                                </div>
+                            </div>
+                        `);
+
+                    const mKey = g.id || (g.lat.toFixed(6) + ',' + g.lng.toFixed(6));
+                    mapMarkers[mKey] = marker;
+                });
+
+                // Render list
+                const container = $('#events-list-container');
+                container.empty();
+
+                currentAllGroups.forEach(g => {
+                    const isShared = (sharedEvent && Math.abs(g.lat - sharedEvent.lat) < 0.0001 && Math.abs(g.lng - sharedEvent.lng) < 0.0001);
+                    const activeClass = isShared ? 'active' : '';
+
+                    const item = $(`
+                        <div class="event-item-map ${activeClass}" id="event-item-${g.id || g.lat.toFixed(4)}">
+                            <div class="event-item-title"><i class="fa fa-users"></i> ${escapeHTML(g.title)}</div>
+                            <div class="event-item-desc">${escapeHTML(g.desc)}</div>
+                            <div class="event-item-meta">
+                                <span><i class="fa fa-clock-o"></i> ${escapeHTML(g.time || 'N/A')}</span>
+                                <span style="color: #60a5fa;"><i class="fa fa-map-pin"></i> View on Map</span>
+                            </div>
+                        </div>
+                    `);
+
+                    item.on('click', function() {
+                        $('.event-item-map').removeClass('active');
+                        $(this).addClass('active');
+                        map.setView([g.lat, g.lng], 17);
+                        const mKey = g.id || (g.lat.toFixed(6) + ',' + g.lng.toFixed(6));
+                        if (mapMarkers[mKey]) {
+                            mapMarkers[mKey].openPopup();
+                        }
+                    });
+
+                    container.append(item);
+                });
+            }
+
+            // Start Creating Event
+            $('#btn-start-create-event').on('click', function() {
+                $('#map-panel-default').addClass('d-none');
+                $('#map-panel-instruction').removeClass('d-none');
+                
+                // Clear any leftover inputs or temporary markers
+                if (tempMarker) {
+                    map.removeLayer(tempMarker);
+                    tempMarker = null;
+                }
+                selectedCoords = null;
+                $('#event-title').val('');
+                $('#event-desc').val('');
+                $('#event-datetime').val('');
+            });
+
+            // Cancel Pinning
+            $('#btn-cancel-create').on('click', function() {
+                if (tempMarker) {
+                    map.removeLayer(tempMarker);
+                    tempMarker = null;
+                }
+                selectedCoords = null;
+                $('#map-panel-instruction').addClass('d-none');
+                $('#map-panel-default').removeClass('d-none');
+            });
+
+            // Back to Instruction from Form
+            $('#btn-back-to-instruction').on('click', function() {
+                $('#map-panel-form').addClass('d-none');
+                $('#map-panel-instruction').removeClass('d-none');
+                if (tempMarker) {
+                    map.removeLayer(tempMarker);
+                    tempMarker = null;
+                }
+                selectedCoords = null;
+            });
+
+            // Save Event and Generate Link
+            $('#btn-save-event').on('click', function() {
+                const titleVal = $.trim($('#event-title').val());
+                const descVal = $.trim($('#event-desc').val());
+                const timeVal = $.trim($('#event-datetime').val());
+
+                if (!titleVal) {
+                    alert('Please enter a group or event title.');
+                    $('#event-title').focus();
+                    return;
+                }
+                if (!descVal) {
+                    alert('Please enter a description or purpose.');
+                    $('#event-desc').focus();
+                    return;
+                }
+                if (!selectedCoords) {
+                    alert('Please pin a location on the map first.');
+                    return;
+                }
+
+                const newEvent = {
+                    id: 'user-' + Date.now(),
+                    title: titleVal,
+                    desc: descVal,
+                    time: timeVal || 'Flexible',
+                    lat: selectedCoords.lat,
+                    lng: selectedCoords.lng
+                };
+
+                // Add to list and save
+                userGroups.push(newEvent);
+                localStorage.setItem('mangeshi_community_events', JSON.stringify(userGroups));
+
+                // Generate sharing URL
+                const origin = window.location.origin + window.location.pathname;
+                const shareLink = `${origin}?lat=${newEvent.lat.toFixed(6)}&lng=${newEvent.lng.toFixed(6)}&title=${encodeURIComponent(newEvent.title)}&desc=${encodeURIComponent(newEvent.desc)}&time=${encodeURIComponent(newEvent.time)}`;
+
+                $('#share-link-input').val(shareLink);
+
+                // Configure WhatsApp share button
+                const whatsappText = `Hi! I pinned a community group/event for Mangeshi Heights Balkum: *${newEvent.title}*. Look up details and location here: ${shareLink}`;
+                $('#btn-share-whatsapp').attr('href', 'https://api.whatsapp.com/send?text=' + encodeURIComponent(whatsappText));
+
+                // Remove tempMarker and render new list/markers
+                if (tempMarker) {
+                    map.removeLayer(tempMarker);
+                    tempMarker = null;
+                }
+                selectedCoords = null;
+
+                renderAll();
+
+                // Switch to Success screen
+                $('#map-panel-form').addClass('d-none');
+                $('#map-panel-success').removeClass('d-none');
+            });
+
+            // Copy Share Link
+            $('#btn-copy-link').on('click', function() {
+                const linkInput = $('#share-link-input');
+                linkInput.select();
+                document.execCommand('copy');
+                
+                // Visual feedback
+                const btn = $(this);
+                const originalHtml = btn.html();
+                btn.html('<i class="fa fa-check"></i>').addClass('btn-success').removeClass('btn-warning');
+                setTimeout(() => {
+                    btn.html(originalHtml).removeClass('btn-success').addClass('btn-warning');
+                }, 2000);
+            });
+
+            // Back to main list from Success View
+            $(document).on('click', '#btn-reset-map', function() {
+                // Clear inputs
+                $('#event-title').val('');
+                $('#event-desc').val('');
+                $('#event-datetime').val('');
+                
+                // Clear sharedEvent so it is not highlighted next time
+                sharedEvent = null;
+                
+                // Clean URL query parameters without reloading the page
+                if (window.history && window.history.replaceState) {
+                    const cleanUrl = window.location.origin + window.location.pathname;
+                    window.history.replaceState({}, document.title, cleanUrl);
+                }
+
+                // Reload stored and render
+                loadStoredEvents();
+                renderAll();
+
+                $('#map-panel-success').addClass('d-none');
+                $('#map-panel-default').removeClass('d-none');
+            });
+
+            // Initialize on start
+            loadStoredEvents();
+            parseURLParams();
+            initCommunityMap();
         });
     </script>
 
